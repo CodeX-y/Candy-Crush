@@ -14,9 +14,10 @@ This repository contains a simple implementation of the classic Candy Crush game
 
 ## Usage
 
-1. Open `index.html` in a web browser to launch the Candy Crush game.
+1. Open `[index.html](https://codex-y.github.io/Candy-Crush/)` in a web browser to launch the Candy Crush game.
 2. Click the "New Game" button to start a new game.
-3. Use the arrow buttons and text field to move candies or press the "Crush Once" button to remove crushable candies.
+3. Use the text field to select candies and the arrow keys to move candies.
+4. Press the "Crush Once" button to remove crushable candies.
 
 ## Credits
 
