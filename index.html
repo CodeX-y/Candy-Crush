@@ -1,0 +1,343 @@
+<!--
+CandyCrush
+Your Name: Yusra Ahmed
+Collaborators: none
+-->
+<!DOCTYPE html>
+<html>
+<!--
+/* Copyright (c) 2017 MIT 6.813/6.831 course staff, all rights reserved.
+ * Redistribution of original or derived work requires permission of course staff.
+ */
+-->
+<head>
+<meta charset="utf-8">
+<title>CandyCrush</title>
+<!-- Load style sheets -->
+<link rel="stylesheet" href=
+  "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.css">
+<link rel="stylesheet" href="mainLayout.css">
+<!-- Use mobile-aware viewport -->
+<meta name="viewport" content=
+  "width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- Load any supplemental Javascript libraries here -->
+<script src=
+  "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src=
+  "https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.2/seedrandom.js">
+</script>
+<script src="candy.js"></script>
+<script src="board.js"></script>
+<script src="rules.js"></script>
+<script src="https://use.fontawesome.com/a9fb7f4e82.js"></script>
+<script>
+// By default, the first board loaded by your page will be the same 
+// each time you load (which is accomplished by "seeding" the random
+// number generator. This makes testing (and grading!) easier!
+Math.seedrandom(0);
+// A short jQuery extension to read query parameters from the URL.
+$.extend({
+  getUrlVars: function() {
+    var vars = [], pair;
+    var pairs = window.location.search.substr(1).split('&');
+    for (var i = 0; i < pairs.length; i++) {
+      pair = pairs[i].split('=');
+      vars.push(pair[0]);
+      vars[pair[0]] = pair[1] &&
+          decodeURIComponent(pair[1].replace(/\+/g, ' '));
+    }
+    return vars;
+  },
+  getUrlVar: function(name) {
+    return $.getUrlVars()[name];
+  }
+});
+// constants
+var DEFAULT_BOARD_SIZE = 8;
+// data model at global scope for easier debugging
+var board;
+var rules;
+
+// initialize board
+if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) {
+  board = new Board($.getUrlVar('size'));
+} else {
+  board = new Board(DEFAULT_BOARD_SIZE);
+}
+// load a rule
+rules = new Rules(board);
+// Final initialization entry point: the Javascript code inside this block
+// runs at the end of start-up when the page has finished loading.
+$(document).ready(function()
+{
+  // initialize a new board
+  $('#board').empty();
+  
+  for(var i = 0; i < DEFAULT_BOARD_SIZE; i++){
+    var row = document.createElement('tr');
+    $('#board').append(row);
+    for(var j = 0; j < DEFAULT_BOARD_SIZE; j++){
+      var col = document.createElement('td');
+      row.append(col);
+    }
+  }
+
+  prepNewGame();
+});
+
+//////////////////////
+// Helper Functions //
+//////////////////////
+
+// call this when New Game button is clicked
+function prepNewGame() {
+  board.clear();
+  rules.prepareNewGame();
+  disableAll();
+}
+
+function createCandy(info) {
+  var position = String.fromCharCode(info.candy.col + 97) + (info.candy.row + 1);
+  var div = $("<div>")
+    .data("candy", info.candy)
+    .addClass("candy-" + info.candy.toString())
+    .attr("id", info.candy.id)
+    .attr("position", position)
+    .text(position);
+
+  return div;
+}
+
+// enable or disable buttons
+function disableButton(buttonID){
+  document.getElementById(buttonID).disabled = true;
+}
+function enableButton(buttonID){
+  document.getElementById(buttonID).disabled = false;
+}
+function disableMoves(){
+  disableButton("up")
+  disableButton("left")
+  disableButton("right")
+  disableButton("down")
+}
+function disableAll(){
+  disableButton("up")
+  disableButton("left")
+  disableButton("right")
+  disableButton("down")
+  disableButton("crush")
+}
+
+function parseInput() {
+  var inputBox = document.getElementById('arrowMenu');
+  var input = inputBox.value.toLowerCase();
+  disableAll();
+
+  if (input.length === 2) {
+    var div = $("div").find("[position='" + input + "']");
+    var candy = div.data("candy");
+
+    if (candy !== undefined) {
+      var directions = ["up", "down", "left", "right"];
+
+      directions.forEach(function(direction) {
+        if (rules.isMoveTypeValid(candy, direction)) {
+          enableButton(direction);
+        }
+      });
+    }
+  }
+
+  crushAgain();
+}
+
+function crushAgain(){
+  if (rules.getCandyCrushes().length != 0){
+    disableMoves()
+    enableButton("crush")
+  }
+  else {
+    disableButton("crush")
+  }
+}
+
+/* Event Handlers */
+// access the candy object with info.candy
+
+// add a candy to the board
+$(board).on('add', function(e, info)
+{
+  var candy = info.candy;
+  var position = String.fromCharCode(candy.col + 97) + (candy.row + 1);
+
+  var div = $("<div>")
+    .data("candy", candy)
+    .addClass("candy-" + candy.toString())
+    .attr("id", candy.id)
+    .attr("position", position)
+    .text(position);
+
+  $("#board")
+    .find("tr:eq(" + candy.row + ")")
+    .find("td:eq(" + candy.col + ")")
+    .append(div);
+
+});
+
+// move a candy on the board
+$(board).on('move', function(e, info)
+{
+  // Remove current candy element by ID
+  var curCandy = document.getElementById(info.candy.id);
+  if (curCandy) {
+    curCandy.parentNode.removeChild(curCandy);
+  }
+
+  // Create new candy
+  var newCandy = createCandy(info);
+
+  // Append new candy to table
+  var selectCell = `#board tr:eq(${info.candy.row}) td:eq(${info.candy.col})`;
+  $(selectCell).append(newCandy);
+
+});
+
+// remove a candy from the board
+$(board).on('remove', function(e, info)
+{
+  var removeCandy = document.getElementById(info.candy.id);
+  removeCandy.parentNode.removeChild(removeCandy);
+});
+
+// move a candy on the board: optional
+$(board).on('scoreUpdate', function(e, info)
+{
+  // Your code here. To be implemented in pset 2.
+});
+
+
+
+// Button Events
+
+$(document).on('click', ".btn", function(evt) {
+  var buttonID = evt.target.id;
+
+  function swapCandy(direction) {
+    var candySwap = board.getCandyInDirection(candy, direction);
+    board.flipCandies(candy, candySwap);
+    disableAll();
+    enableButton("crush");
+  }
+
+  if (buttonID == "newGame") {
+    prepNewGame();
+  }
+
+  // buttons should be enabled now
+  // Get input candy.
+  var inputBox = document.getElementById("arrowMenu");
+  var div = $("div").find("[position='" + inputBox.value + "']");
+  var candy = div.data("candy");
+  inputBox.value = '';
+
+  switch (buttonID) {
+    case "up":
+      swapCandy("up");
+      break;
+    case "down":
+      swapCandy("down");
+      break;
+    case "left":
+      swapCandy("left");
+      break;
+    case "right":
+      swapCandy("right");
+      break;
+    case "crush":
+      rules.removeCrushes(rules.getCandyCrushes());
+      rules.moveCandiesDown();
+      setTimeout(function() {
+        rules.moveCandiesDown();
+        crushAgain();
+      }, 500);
+      break;
+  }
+
+  // Autofocus when any button is pressed.
+  document.getElementById("arrowMenu").focus();
+});
+
+// Keyboard events arrive here
+$(document).on('keydown', function(evt) {
+  // Your code here.
+});
+
+
+
+</script>
+
+
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4" id="firstColumn">
+        <div>
+        <!-- Column 1 Code Here -->
+          <h1 id="title" style="text-align:center;" >Candy</h1>
+          <h1 id="title" style="text-align:center;" >Crush</h1>
+          <!-- <input class="btn btn-default" type="button" id="newGame" value="New Game"> -->
+          <div>
+            <input type="button" class="btn btn-default" id="newGame" value="New Game"></input>
+          </div>
+        </div>
+      </div>
+  
+      <div class="col-md-4" id="secondColumn">
+  
+        <!-- Column 2 Code Here -->
+        <table id="board">
+        </table>
+  
+      </div>
+  
+      <div class="col-md-4" id="thirdColumn">
+  
+        <!-- Column 3 Code Here -->
+        <form class="form-inline">
+          <div class="form-group " style="margin: auto;">
+            <label for="moveInput"style="font-weight: bold;font-size: medium;color: black;margin: auto;">
+              MOVE:
+            </label>
+            <input type="text" class="form-control" id="arrowMenu" maxlength="2" style="width: 50px;" onkeyup="parseInput()">
+          </div>
+        </form>
+  
+        <div style="margin-top: 20px;">
+          <div>
+            <input type="button" class="btn btn-default arrow" id="up" value="&uarr;"></input>
+          </div>
+          <div>
+            <input type="button" class="btn btn-default arrow" id="left" value="&larr;"></input>
+            <input type="button" class="btn btn-default arrow" id="right" value="&rarr;" style="margin-left: 42px;"></input>
+          </div>
+          <div>
+            <input type="button" class="btn btn-default arrow" id="down" value="&darr;"></input>
+          </div>
+  
+        </div>
+  
+        <div style="margin-top: 20px;">
+          <input type="button" class="btn btn-default" id="crush" value="Crush Once"></input>
+        </div>
+  
+      </div>
+    </div> <!-- class="row" -->
+  </div> <!-- class="container" -->
+  
+  </body>
+  
+  </html>
