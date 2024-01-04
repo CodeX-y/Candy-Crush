@@ -1,6 +1,6 @@
 # Candy Crush Game
 
-This repository contains a straightforward implementation of the classic Candy Crush game using HTML, CSS, and JavaScript. The game boasts a responsive user interface with an 8x8 candy grid, dynamic candy generation, and interactive controls.
+This repository contains an implementation of the classic Candy Crush game using HTML, CSS, and JavaScript. The game boasts a responsive user interface with an 8x8 candy grid, dynamic candy generation, and interactive controls.
 
 ## Features
 
@@ -26,6 +26,3 @@ This project was created as part of a programming assignment. The core game logi
 ## License
 
 This project is licensed under the [MIT License](LICENSE.md). Feel free to use, modify, and distribute the code as per the terms of the license.
-
-License
-This project is licensed under the MIT License. Feel free to use, modify, and distribute the code as per the terms of the license.
